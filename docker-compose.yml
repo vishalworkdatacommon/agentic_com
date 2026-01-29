@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  mcp_server:
+    build: ./mcp_server
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./mcp_server:/app
+
+  streamlit_app:
+    build: ./streamlit_app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./streamlit_app:/app
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - mcp_server

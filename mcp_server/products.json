@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1",
+    "name": "Google Pixel 8 Pro",
+    "description": "The latest and most powerful Google Pixel phone.",
+    "price": 999,
+    "category": "Electronics",
+    "gtin": "840000000001",
+    "brand": "Google",
+    "offers": [
+      {
+        "price": 999,
+        "availability": "InStock",
+        "url": "https://store.google.com/product/pixel_8_pro"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "name": "Google Nest Hub Max",
+    "description": "A smart display with a camera for video calls and home monitoring.",
+    "price": 229,
+    "category": "Smart Home",
+    "gtin": "840000000002",
+    "brand": "Google",
+    "offers": [
+      {
+        "price": 229,
+        "availability": "InStock",
+        "url": "https://store.google.com/product/nest_hub_max"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "name": "Chromecast with Google TV",
+    "description": "Stream your favorite entertainment in 4K HDR.",
+    "price": 49.99,
+    "category": "Electronics",
+    "gtin": "840000000003",
+    "brand": "Google",
+    "offers": [
+      {
+        "price": 49.99,
+        "availability": "InStock",
+        "url": "https://store.google.com/product/chromecast_google_tv"
+      }
+    ]
+  }
+]
