@@ -1,0 +1,47 @@
+# Commands to be run by a Project Owner (e.g., Sharath or Soumyadip)
+# Please ensure these are run from an authenticated gcloud terminal.
+# Replace "AIzaSyAbLxd74jEawFm0i-Ozl5YKY3KKdeWwdftA" with your actual Gemini API Key in the printf command.
+
+# Set the project for convenience (Sharath should verify this is the correct project)
+gcloud config set project infosys-test-2
+
+# 1. Enable necessary GCP APIs for the project
+echo "Enabling necessary GCP APIs..."
+gcloud services enable artifactregistry.googleapis.com \
+                       run.googleapis.com \
+                       secretmanager.googleapis.com \
+                       firestore.googleapis.com \
+                       --project="infosys-test-2"
+
+# 2. Create the Firestore Database (This is the one that was failing for Vishal)
+echo "Creating Firestore database..."
+gcloud firestore databases create --location=us-central --type=firestore-native --project="infosys-test-2"
+
+# 3. Create the Gemini API Key Secret
+echo "Creating Secret Manager secret for Gemini API key..."
+gcloud secrets create gemini-api-key --replication-policy="automatic" --project="infosys-test-2"
+# Add your API key as a secret version (replace with your actual key)
+printf "YOUR_GEMINI_API_KEY" | gcloud secrets versions add gemini-api-key --data-file=- --project="infosys-test-2"
+
+# 4. Create Service Account for Streamlit App (Accessing Secret Manager)
+echo "Creating Service Account for Streamlit app..."
+gcloud iam service-accounts create streamlit-app-sa --display-name "Streamlit App Service Account" --project="infosys-test-2"
+echo "Granting Secret Manager access to Streamlit app Service Account..."
+gcloud secrets add-iam-policy-binding gemini-api-key \
+  --member "serviceAccount:streamlit-app-sa@infosys-test-2.iam.gserviceaccount.com" \
+  --role "roles/secretmanager.secretAccessor" \
+  --project="infosys-test-2"
+
+# 5. Create Service Account for MCP Server (Accessing Firestore)
+echo "Creating Service Account for MCP server..."
+gcloud iam service-accounts create mcp-server-sa --display-name "MCP Server Service Account" --project="infosys-test-2"
+echo "Granting Firestore access to MCP server Service Account..."
+gcloud projects add-iam-policy-binding infosys-test-2 \
+  --member "serviceAccount:mcp-server-sa@infosys-test-2.iam.gserviceaccount.com" \
+  --role "roles/datastore.user" \
+  --project="infosys-test-2"
+
+# 6. Run the Data Migration Script (This will be run by Vishal AFTER the above steps are confirmed to be successful)
+#    This command uses a Docker image we built previously to upload products.
+echo "Once the above steps are confirmed successful by Sharath/Soumyadip, Vishal should run this command:"
+echo "docker run --rm -v ~/.config/gcloud:/root/.config/gcloud -e GCP_PROJECT_ID="infosys-test-2" migration-runner"

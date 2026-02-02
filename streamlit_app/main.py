@@ -2,18 +2,26 @@ import streamlit as st
 import requests
 import google.generativeai as genai
 import os
+import json
+from tenacity import retry, stop_after_attempt, wait_fixed
+from google.cloud import secretmanager
+
+def get_gemini_api_key():
+    """Fetches the Gemini API key from the environment variable."""
+    return os.environ.get("GEMINI_API_KEY")
 
 # Configure Gemini API
-# Replace 'YOUR_GEMINI_API_KEY' with your actual Gemini API key
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY"))
+api_key = get_gemini_api_key()
+genai.configure(api_key=api_key)
 
 # Initialize the Gemini model
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel('gemini-2.5-pro')
 
-MCP_SERVER_URL = "http://127.0.0.1:5001"
+MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL", "http://127.0.0.1:5001")
 
 st.title("Agentic Commerce Product Discovery")
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 @st.cache_data
 def get_products():
     try:
@@ -22,7 +30,7 @@ def get_products():
         return response.json()
     except requests.exceptions.RequestException as e:
         st.error(f"Error fetching products from MCP server: {e}")
-        return []
+        raise e # Reraise to trigger the retry
 
 products = get_products()
 
@@ -44,16 +52,25 @@ if user_query:
     try:
         response = model.generate_content(prompt)
         filter_criteria_str = response.text.strip()
+        # Strip markdown code block formatting if present
+        if filter_criteria_str.startswith('```json'):
+            filter_criteria_str = filter_criteria_str[len('```json'):].strip()
+        if filter_criteria_str.endswith('```'):
+            filter_criteria_str = filter_criteria_str[:-len('```')].strip()
+        
         try:
             filter_criteria = json.loads(filter_criteria_str)
         except json.JSONDecodeError:
             st.error(f"Gemini returned invalid JSON: {filter_criteria_str}")
             filter_criteria = {}
 
+
+
         filtered_products = products
         if filter_criteria:
             if 'category' in filter_criteria:
-                filtered_products = [p for p in filtered_products if p.get('category') == filter_criteria['category']]
+                category_query = filter_criteria['category'].lower()
+                filtered_products = [p for p in filtered_products if p.get('category', '').lower() == category_query]
             if 'min_price' in filter_criteria:
                 filtered_products = [p for p in filtered_products if p.get('price', 0) >= filter_criteria['min_price']]
             if 'max_price' in filter_criteria:

@@ -16,5 +16,6 @@ services:
       - ./streamlit_app:/app
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - MCP_SERVER_URL=http://mcp_server:5001
     depends_on:
       - mcp_server
